@@ -6,8 +6,8 @@ import (
 	"flag"
 	"fmt"
 
-	// mysql driver
-	_ "github.com/go-sql-driver/mysql"
+	// posgres driver
+	_ "github.com/lib/pq"
 
 	"github.com/curtisstpierre/go-grpc-http-rest-microservice-tutorial/pkg/protocol/grpc"
 	"github.com/curtisstpierre/go-grpc-http-rest-microservice-tutorial/pkg/service/v1"
@@ -22,6 +22,8 @@ type Config struct {
 	// DB Datastore parameters section
 	// DatastoreDBHost is host of database
 	DatastoreDBHost string
+	// DatastoreDBPort is port of database
+	DatastoreDBPort string
 	// DatastoreDBUser is username to connect to database
 	DatastoreDBUser string
 	// DatastoreDBPassword password to connect to database
@@ -38,6 +40,7 @@ func RunServer() error {
 	var cfg Config
 	flag.StringVar(&cfg.GRPCPort, "grpc-port", "", "gRPC port to bind")
 	flag.StringVar(&cfg.DatastoreDBHost, "db-host", "", "Database host")
+	flag.StringVar(&cfg.DatastoreDBPort, "db-port", "", "Database port")
 	flag.StringVar(&cfg.DatastoreDBUser, "db-user", "", "Database user")
 	flag.StringVar(&cfg.DatastoreDBPassword, "db-password", "", "Database password")
 	flag.StringVar(&cfg.DatastoreDBSchema, "db-schema", "", "Database schema")
@@ -47,17 +50,18 @@ func RunServer() error {
 		return fmt.Errorf("invalid TCP port for gRPC server: '%s'", cfg.GRPCPort)
 	}
 
-	// add MySQL driver specific parameter to parse date/time
+	// add postgres driver specific parameter to parse date/time
 	// Drop it for another database
-	param := "parseTime=true"
+	param := "sslmode=disable"
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?%s",
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?%s",
 		cfg.DatastoreDBUser,
 		cfg.DatastoreDBPassword,
 		cfg.DatastoreDBHost,
+		cfg.DatastoreDBPort,
 		cfg.DatastoreDBSchema,
 		param)
-	db, err := sql.Open("mysql", dsn)
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %v", err)
 	}
